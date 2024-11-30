@@ -10,14 +10,15 @@ services:
       - ./config:/mosquitto/config
       - ./data:/mosquitto/data
       - ./logs:/mosquitto/log
-    env_file:
-      - .env
+    environment:
+      - MQTT_USER
+      - MQTT_BROKER_PASSWORD
     command: >
       sh -c "
       touch /mosquitto/config/pwfile &&
       chmod 700 /mosquitto/config/pwfile &&
       chown mosquitto:mosquitto /mosquitto/config/pwfile &&
-      mosquitto_passwd -b /mosquitto/config/pwfile $MQTT_USER $MQTT_PASSWORD &&
+      mosquitto_passwd -b /mosquitto/config/pwfile $MQTT_USER $MQTT_BROKER_PASSWORD &&
       mosquitto -c /mosquitto/config/mosquitto.conf"
     stdin_open: true
     tty: true
@@ -28,8 +29,10 @@ services:
     depends_on:
       - mqtt-broker
     environment:
-      - MQTT_BROKER=mqtt-broker
-      - MQTT_BROKER_PASSWORD=${MQTT_BROKER_PASSWORD}
+      - BROKER_USER=${MQTT_USER}
+      - BROKER_NAME=mqtt-broker
+      - BROKER_PASSWORD=${MQTT_BROKER_PASSWORD}
+
     ports:
       - "5001:5000"
     command: python app.py  # Adjust to your app’s entry point
