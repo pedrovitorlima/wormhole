@@ -2,3 +2,5 @@
 /config/pwfile
 /data/*
 /logs/*
+.env
+.dockerenv
