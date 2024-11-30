@@ -34,4 +34,4 @@ mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
 # # handles reconnecting.
 # # Other loop*() functions are available that give a threaded interface and a
 # # manual interface.
-mqttc.loop_start()
+mqttc.loop_forever()

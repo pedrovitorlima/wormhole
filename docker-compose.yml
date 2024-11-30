@@ -14,6 +14,7 @@ services:
       - .dockerenv
     command: >
       sh -c "
+      source .dockerenv &&
       touch /mosquitto/config/pwfile &&
       chmod 700 /mosquitto/config/pwfile &&
       chown mosquitto:mosquitto /mosquitto/config/pwfile &&
@@ -29,7 +30,6 @@ services:
       - mqtt-broker
     env_file:
       - .env
-
     ports:
       - "5001:5000"
     command: python app.py  # Adjust to your app’s entry point

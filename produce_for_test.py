@@ -18,5 +18,4 @@ mqttc.username_pw_set(MQTT_USER, MQTT_PASSWORD)
 mqttc.connect(MQTT_BROKER, MQTT_PORT, 60)
 mqttc.publish(MQTT_TOPIC, "how's going")
 print('message is sent')
-
-mqttc.loop_forever()
+mqttc.loop_()
