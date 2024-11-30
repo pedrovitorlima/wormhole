@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mqtt-broker:
+    image: eclipse-mosquitto
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./config:/mosquitto/config
+      - ./data:/mosquitto/data
+      - ./logs:/mosquitto/log
+    env_file:
+      - .env
+    command: >
+      sh -c "
+      touch /mosquitto/config/pwfile &&
+      chmod 700 /mosquitto/config/pwfile &&
+      chown mosquitto:mosquitto /mosquitto/config/pwfile &&
+      mosquitto_passwd -b /mosquitto/config/pwfile $MQTT_USER $MQTT_PASSWORD &&
+      mosquitto -c /mosquitto/config/mosquitto.conf"
+    stdin_open: true
+    tty: true
+
+  wormhole:
+    build: .
+    container_name: wormhole
+    depends_on:
+      - mqtt-broker
+    environment:
+      - MQTT_BROKER=mqtt-broker
+      - MQTT_BROKER_PASSWORD=${MQTT_BROKER_PASSWORD}
+    ports:
+      - "5001:5000"
+    command: python app.py  # Adjust to your app’s entry point
+    restart: always
