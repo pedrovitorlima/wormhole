@@ -5,10 +5,6 @@ services:
     image: eclipse-mosquitto:latest
     container_name: mqtt-broker
     restart: always
-    deploy:
-      resources:
-        limits: 
-          memory: 256M
     ports:
       - "1883:1883"
       - "9001:9001"
