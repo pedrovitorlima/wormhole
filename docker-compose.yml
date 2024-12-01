@@ -2,10 +2,16 @@ version: '3.8'
 
 services:
   mqtt-broker:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:latest
     container_name: mqtt-broker
+    restart: always
+    deploy:
+      resources:
+        limits: 
+          memory: 256M
     ports:
       - "1883:1883"
+      - "9001:9001"
     volumes:
       - ./config:/mosquitto/config
       - ./data:/mosquitto/data
@@ -22,15 +28,30 @@ services:
       mosquitto -c /mosquitto/config/mosquitto.conf"
     stdin_open: true
     tty: true
+  
+  postgres:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: always
+    env_file: .dockerenv
+      
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Initialization script to create table
+    ports:
+      - "5432:5432"  # Exposing the default PostgreSQL port
 
   wormhole:
     build: .
     container_name: wormhole
     depends_on:
       - mqtt-broker
+      - postgres
     env_file:
       - .env
     ports:
-      - "5001:5000"
-    command: python app.py  # Adjust to your app’s entry point
+      - "5001:5001"
     restart: always
+
+networks:
+  default:
+    driver: bridge
