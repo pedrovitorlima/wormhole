@@ -48,6 +48,20 @@ services:
       - "5001:5001"
     restart: always
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    env_file:
+      - .dockerenv
+    restart: always
+
+volumes:
+  grafana-data:
+
 networks:
   default:
     driver: bridge
