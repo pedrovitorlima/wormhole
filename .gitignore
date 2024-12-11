@@ -5,3 +5,4 @@
 .env
 .dockerenv
 /grafana-data
+__pycache__/

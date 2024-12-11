@@ -32,7 +32,7 @@ def save_to_db(message):
     print(f"Error saving to DB: {e}")
 
 async def main():
-  receiver = Receiver()
+  receiver = Receiver(handle_message=save_to_db)
   await receiver.start()
 
 if __name__ == '__main__':
