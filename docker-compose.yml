@@ -28,7 +28,6 @@ services:
   postgres:
     image: postgres:latest
     container_name: postgres-db
-    restart: always
     env_file: .dockerenv
       
     volumes:
@@ -57,7 +56,6 @@ services:
       - grafana-data:/var/lib/grafana
     env_file:
       - .dockerenv
-    restart: always
 
 volumes:
   grafana-data:
