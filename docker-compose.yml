@@ -32,6 +32,7 @@ services:
       
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Initialization script to create table
+      - postgres-data:/var/lib/postgresql/data          # Persistent storage for database data
     ports:
       - "5432:5432"  # Exposing the default PostgreSQL port
 
@@ -59,6 +60,7 @@ services:
 
 volumes:
   grafana-data:
+  postgres-data:
 
 networks:
   default:

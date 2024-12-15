@@ -2,8 +2,9 @@ from dotenv import load_dotenv
 import os
 import asyncio
 import psycopg2
-import datetime
 from psycopg2.extras import RealDictCursor
+from pytz import timezone
+import datetime
 
 from reader import Receiver
 
@@ -17,7 +18,7 @@ def save_to_db(message):
     device = message.get("device")
     sensor = message.get("sensor")
     reading = message.get("reading")
-    date = message.get("date") or datetime.datetime.now()
+    date = message.get("date") or datetime.datetime.now(timezone("Australia/Sydney"))
 
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     with conn.cursor() as cursor:
