@@ -18,7 +18,11 @@ def save_to_db(message):
     device = message.get("device")
     sensor = message.get("sensor")
     reading = message.get("reading")
-    date = message.get("date") or datetime.datetime.now(timezone("Australia/Sydney"))
+    date = message.get("date")
+    
+    if not date:
+      tz = timezone("Australia/Sydney")
+      date = datetime.datetime.now(datetime.timezone.utc).astimezone(tz)
 
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     with conn.cursor() as cursor:
