@@ -6,6 +6,7 @@ from psycopg2.extras import RealDictCursor
 from pytz import timezone
 import datetime
 
+import json
 import logging
 
 from reader import Receiver
@@ -18,7 +19,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def save_to_db(message):
-  logger.info('Saving ' + message + ' to the database')
+  logger.info('Saving ' + json.dumps(message) + ' to the database')
   try:
     
     # Parse payload as JSON
