@@ -6,14 +6,21 @@ from psycopg2.extras import RealDictCursor
 from pytz import timezone
 import datetime
 
+import logging
+
 from reader import Receiver
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def save_to_db(message):
+  logger.info('Saving ' + message + ' to the database')
   try:
+    
     # Parse payload as JSON
     device = message.get("device")
     sensor = message.get("sensor")
@@ -33,7 +40,9 @@ def save_to_db(message):
       cursor.execute(query, (device, sensor, reading, date))
     conn.commit()
     conn.close()
+    logger.info('Message saved')
   except Exception as e:
+    logging.error('Error whilst saving to the database: ' + e)
     print(f"Error saving to DB: {e}")
 
 async def main():
