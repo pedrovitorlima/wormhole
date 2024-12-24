@@ -43,8 +43,9 @@ def save_to_db(message):
     conn.close()
     logger.info('Message saved')
   except Exception as e:
-    logging.error('Error whilst saving to the database: ' + e)
+    logging.error(f"Error whilst saving to the database: {json.dumps(message)}. Exception: {e}")
     print(f"Error saving to DB: {e}")
+
 
 async def main():
   receiver = Receiver(handle_message=save_to_db)
