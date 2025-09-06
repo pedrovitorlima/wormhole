@@ -15,10 +15,9 @@ API_URL = os.getenv("API_URL", "http://www.bom.gov.au/nsw/forecasts/sydney.shtml
 MQTT_USERNAME = os.getenv("MQTT_USERNAME", "username")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "password")
 
-def on_message(client, userdata, msg):
-    payload = json.loads(msg.payload.decode())
+def on_message(client, userdata, message: mqtt.MQTTMessage):
+    payload = json.loads(message.payload.decode())
     action = payload.get("action")
-
     if action == "update_weather":
         weather_data = fetch_weather(API_URL)
         client.publish(WEATHER_TOPIC, weather_data)
