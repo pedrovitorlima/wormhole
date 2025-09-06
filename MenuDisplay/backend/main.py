@@ -11,11 +11,11 @@ MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 WEATHER_TOPIC = os.getenv("PUBLISH_TOPIC", "wormhole/weather")
 LISTEN_TOPIC = os.getenv("LISTEN_TOPIC", "palantir/command")
+LISTEN_TOPIC = os.getenv("API_URL", "http://www.bom.gov.au/nsw/forecasts/sydney.shtml")
 
 def on_message(client, userdata, msg):
     payload = json.loads(msg.payload.decode())
     action = payload.get("action")
-    # params = payload.get("params", {}) 
 
     if action == "update_weather":
         weather_data = fetch_weather()
@@ -27,6 +27,7 @@ def main():
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
 
+    client.subscribe(LISTEN_TOPIC)
     client.subscribe(LISTEN_TOPIC)
 
     try:
