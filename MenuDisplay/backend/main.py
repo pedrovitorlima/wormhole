@@ -24,7 +24,7 @@ def on_message(client, userdata, msg):
         client.publish(WEATHER_TOPIC, weather_data)
 
 def main():
-    print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} withh username {MQTT_USERNAME}')
+    print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME} and password {MQTT_PASSWORD}')
     client = mqtt.Client()
     client.on_message = on_message
     client.username_pw_set("username", "password")
