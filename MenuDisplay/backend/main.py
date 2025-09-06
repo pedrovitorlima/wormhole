@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import time
 import os
 from dotenv import load_dotenv
-import fetch_weather
+from fetch_weather import fetch_weather
 import json
 
 load_dotenv()
