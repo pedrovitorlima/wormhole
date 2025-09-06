@@ -22,7 +22,7 @@ def on_message(client, userdata, message, properties=None):
         
         if action == "update_weather":
             weather_data = fetch_weather(API_URL)
-        client.publish(WEATHER_TOPIC, json.dumps(weather_data))
+            client.publish(WEATHER_TOPIC, json.dumps(weather_data))
     except (json.JSONDecodeError, AttributeError) as e:
         print(f"Failed to parse payload: {message.payload.decode().strip()} ({e})")
         return
