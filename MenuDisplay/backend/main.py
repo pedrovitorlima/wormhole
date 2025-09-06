@@ -16,22 +16,16 @@ MQTT_USERNAME = os.getenv("MQTT_USERNAME", "username")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "password")
 
 def on_message(client, userdata, message, properties=None):
-    payload_str = message.payload.decode().strip()
-    if not payload_str:
-        print("Received empty payload")
-        return
-
     try:
-        payload = json.loads(payload_str)
-    except json.JSONDecodeError:
-        print(f"Invalid JSON payload: {payload_str}")
-        return
-
-    action = payload.get("action")
-    if action == "update_weather":
-        weather_data = fetch_weather(API_URL)
+        payload = json.loads(message.payload.decode().strip())
+        action = payload.get("action")  # will fail if payload isn't a dict
+        
+        if action == "update_weather":
+            weather_data = fetch_weather(API_URL)
         client.publish(WEATHER_TOPIC, json.dumps(weather_data))
-
+    except (json.JSONDecodeError, AttributeError) as e:
+        print(f"Failed to parse payload: {message.payload.decode().strip()} ({e})")
+        return
         
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
