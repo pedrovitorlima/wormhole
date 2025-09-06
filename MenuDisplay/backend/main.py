@@ -20,7 +20,7 @@ def on_message(client, userdata, msg):
     action = payload.get("action")
 
     if action == "update_weather":
-        weather_data = fetch_weather()
+        weather_data = fetch_weather(API_URL)
         client.publish(WEATHER_TOPIC, weather_data)
 
 def main():
