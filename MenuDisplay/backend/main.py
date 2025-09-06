@@ -36,7 +36,7 @@ def main():
 
     try:
         while True:
-            data = fetch_weather()
+            data = fetch_weather(API_URL)
             client.publish(WEATHER_TOPIC, data)
             for _ in range(600):  # 600 x 1s = 10 minutes
                 time.sleep(1)
