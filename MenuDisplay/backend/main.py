@@ -15,12 +15,23 @@ API_URL = os.getenv("API_URL", "http://www.bom.gov.au/nsw/forecasts/sydney.shtml
 MQTT_USERNAME = os.getenv("MQTT_USERNAME", "username")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "password")
 
-def on_message(client, userdata, message):
-    payload = json.loads(message.payload.decode())
+def on_message(client, userdata, message, properties=None):
+    payload_str = message.payload.decode().strip()
+    if not payload_str:
+        print("Received empty payload")
+        return
+
+    try:
+        payload = json.loads(payload_str)
+    except json.JSONDecodeError:
+        print(f"Invalid JSON payload: {payload_str}")
+        return
+
     action = payload.get("action")
     if action == "update_weather":
         weather_data = fetch_weather(API_URL)
-        client.publish(WEATHER_TOPIC, weather_data)
+        client.publish(WEATHER_TOPIC, json.dumps(weather_data))
+
         
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
@@ -28,14 +39,12 @@ def on_connect(client, userdata, flags, reason_code, properties):
 
 def main():
     print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME}')
-    mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    mqttc.on_connect = on_connect
-    mqttc.on_message = on_message
-
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.on_message = on_message
     client.on_connect = on_connect
+    
     client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+    
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
 
