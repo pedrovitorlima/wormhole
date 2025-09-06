@@ -1,8 +1,42 @@
-/wormhole-env
-/config/pwfile
-/data/*
-/logs/*
-.env
-.dockerenv
-/grafana-data
+# Python virtual environments
+/wormhole-env/
+venv/
 __pycache__/
+
+# IDE and OS files
+.idea/
+.DS_Store
+
+# Logs and runtime files
+/logs/
+logs/
+*.log
+
+# Data and database files
+/data/
+data/
+*.db
+*.sqlite3
+*.sqlite
+*.bak
+
+# Credentials and secrets
+/config/pwfile
+pwfile
+*.key
+*.pem
+*.crt
+*.env
+.dockerenv
+
+# Grafana and monitoring
+grafana-data/
+grafana-data/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Misc
+*.pid
+*.tmp
+*.swp
