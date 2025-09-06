@@ -27,17 +27,16 @@ def main():
     print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME}')
     client = mqtt.Client()
     client.on_message = on_message
-    client.username_pw_set("username", "password")
+    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
 
-    client.subscribe(LISTEN_TOPIC)
     client.subscribe(LISTEN_TOPIC)
 
     try:
         while True:
             data = fetch_weather(API_URL)
-            client.publish(WEATHER_TOPIC, data)
+            client.publish(WEATHER_TOPIC, json.dumps(data))
             for _ in range(600):  # 600 x 1s = 10 minutes
                 time.sleep(1)
     except KeyboardInterrupt:
