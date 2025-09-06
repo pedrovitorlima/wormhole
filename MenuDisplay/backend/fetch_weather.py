@@ -1,13 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 
-def fetch_weather():
-    URL = "http://www.bom.gov.au/nsw/forecasts/sydney.shtml"
+def fetch_weather(url):
     HEADERS = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
-    response = requests.get(URL, headers=HEADERS)
+    response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     soup = BeautifulSoup(response.text, "html.parser")
 
