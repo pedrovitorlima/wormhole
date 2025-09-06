@@ -25,7 +25,7 @@ def on_message(client, userdata, msg):
 
 def main():
     print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME}')
-    client = mqtt.Client()
+    client = mqtt.Client(client_id="palantir-client", protocol=mqtt.MQTTv5)
     client.on_message = on_message
     client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
