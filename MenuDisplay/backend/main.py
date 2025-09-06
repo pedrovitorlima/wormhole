@@ -29,7 +29,6 @@ def on_message(client, userdata, message, properties=None):
         
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
-    client.subscribe("$SYS/#")
 
 def main():
     print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME}')
