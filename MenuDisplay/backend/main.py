@@ -10,6 +10,7 @@ load_dotenv()
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 WEATHER_TOPIC = os.getenv("PUBLISH_TOPIC", "wormhole/weather")
+DISHWASHER_TOPIC = os.getenv("DISHWASHER_TOPIC", "wormhole/dishwasher")
 LISTEN_TOPIC = os.getenv("LISTEN_TOPIC", "palantir/command")
 API_URL = os.getenv("API_URL", "http://www.bom.gov.au/nsw/forecasts/sydney.shtml")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME", "username")
@@ -19,6 +20,11 @@ def on_message(client, userdata, message, properties=None):
     try:
         payload = json.loads(message.payload.decode().strip())
         action = payload.get("action")  # will fail if payload isn't a dict
+        
+        if action == "load_all":
+            weather_data = fetch_weather(API_URL)
+            client.publish(WEATHER_TOPIC, json.dumps(weather_data))
+            client.publish(DISHWASHER_TOPIC, json.dumps({next: "woman"}))
         
         if action == "update_weather":
             weather_data = fetch_weather(API_URL)
