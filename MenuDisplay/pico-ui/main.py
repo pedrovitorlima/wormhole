@@ -7,10 +7,13 @@ import terminalio
 from adafruit_display_text import bitmap_label as label
 from adafruit_displayio_sh1107 import SH1107, DISPLAY_OFFSET_ADAFRUIT_128x128_OLED_5297
 from adafruit_bitmap_font import bitmap_font
-from adafruit_display_text.bitmap_label import Label
+from adafruit_minimqtt.adafruit_minimqtt import MQTT
 
+from welcome_panel import WelcomePanel
+from mqtt_manager import MqttManager
 import time
-
+import time
+from wifi_manager import WifiManager
 from dishwasher import go_dishwasher
 import constants
 
@@ -25,6 +28,17 @@ display = SH1107(
     display_offset=DISPLAY_OFFSET_ADAFRUIT_128x128_OLED_5297,
     rotation=constants.ROTATION,
 )
+
+welcome = WelcomePanel(display)
+welcome.show()
+
+wifi_manager = WifiManager(display)
+pool, ssl_connect = wifi_manager.connect()
+welcome.show(wifi=True)
+
+mqtt_manager = MqttManager(pool, ssl_connect)
+mqtt_client = mqtt_manager.create_mqtt_client()
+welcome.show(wifi=True, mqtt=True)
 
 encoder = rotaryio.IncrementalEncoder(board.GP27, board.GP26)
 
@@ -79,33 +93,39 @@ button.pull = digitalio.Pull.UP  # Assumes button pulls pin LOW when pressed
 
 icon_area, legend, menu_text_area = draw_menu()
 
-while True:
-    position = encoder.position
-    if position != last_position:
-        if position > last_position:
-            menu_index = (menu_index + 1) % len(menu)
-        else:
-            menu_index = (menu_index - 1) % len(menu)
-        last_position = position
+try:
+    while True:
+        mqtt_client.loop()
+        
+        position = encoder.position
+        
+        if position != last_position:
+            if position > last_position:
+                menu_index = (menu_index + 1) % len(menu)
+            else:
+                menu_index = (menu_index - 1) % len(menu)
+            last_position = position
 
-        # Update icon and text
-        icon_area.text = menu[menu_index][0]
-        legend.text = menu[menu_index][1]
-        menu_text_area.text = menu[menu_index][2]
-    
-    if not button.value: 
-        if menu_index == constants.DISHWASHER:
-            go_dishwasher(display, encoder, button)
-        elif menu_index == constants.WEATHER:
-            print("Weather selected")
-        elif menu_index == constants.SENSORS:
-            print("Sensors selected")
-        elif menu_index == constants.SEND_DATA:
-            print("Send Data selected")
-                
-        print("Button pressed! Action for:", menu[menu_index][2])
-        icon_area, legend, menu_text_area = draw_menu()
+            # Update icon and text
+            icon_area.text = menu[menu_index][0]
+            legend.text = menu[menu_index][1]
+            menu_text_area.text = menu[menu_index][2]
+        
+        if not button.value: 
+            if menu_index == constants.DISHWASHER:
+                go_dishwasher(display, encoder, button)
+            elif menu_index == constants.WEATHER:
+                print("Weather selected")
+            elif menu_index == constants.SENSORS:
+                print("Sensors selected")
+            elif menu_index == constants.SEND_DATA:
+                print("Send Data selected")
+                    
+            print("Button pressed! Action for:", menu[menu_index][2])
+            icon_area, legend, menu_text_area = draw_menu()
 
-        time.sleep(0.2)
+            time.sleep(0.2)
 
-    time.sleep(0.05)
+        time.sleep(0.05)
+except KeyboardInterrupt:
+    print("Exiting and disconnecting from mqtt...")
