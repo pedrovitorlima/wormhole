@@ -21,6 +21,7 @@ def on_message(client, userdata, message, properties=None):
         payload = json.loads(message.payload.decode().strip())
         action = payload.get("action")  # will fail if payload isn't a dict
         
+        print(f"Received message on topic {message.topic} with action: {action}")
         if action == "load_all":
             weather_data = fetch_weather(API_URL)
             client.publish(WEATHER_TOPIC, json.dumps(weather_data))
