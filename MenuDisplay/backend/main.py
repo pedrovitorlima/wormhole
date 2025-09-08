@@ -19,7 +19,8 @@ MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "password")
 def on_message(client, userdata, message, properties=None):
     try:
         payload = json.loads(message.payload.decode().strip())
-        action = payload.get("action")  # will fail if payload isn't a dict
+        print(f"Processing message {payload}")
+        action = payload.get("command")  # will fail if payload isn't a dict
         
         print(f"Received message on topic {message.topic} with action: {action}")
         if action == "load_all":
