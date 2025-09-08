@@ -26,8 +26,8 @@ def on_message(client, userdata, message, properties=None):
         if action == "load_all":
             weather_data = fetch_weather(API_URL)
             client.publish(WEATHER_TOPIC, json.dumps(weather_data))
-            client.publish(DISHWASHER_TOPIC, json.dumps({next: "woman"}))
-        
+            client.publish(DISHWASHER_TOPIC, json.dumps({"next": "woman"}))
+
         if action == "update_weather":
             weather_data = fetch_weather(API_URL)
             client.publish(WEATHER_TOPIC, json.dumps(weather_data))
