@@ -1,37 +1,44 @@
 import subprocess
 import re
+import sys
 
-# Read icon codepoints from a file (comma-separated or one per line)
-with open("icon_list.txt", "r") as f:
+if len(sys.argv) != 4:
+    print("Usage: python generate_icons.py <icon_list.txt> <output_font_base> <font_size>")
+    sys.exit(1)
+
+input_file = sys.argv[1]
+output_font_base = sys.argv[2]  # e.g., "icons"
+font_size = sys.argv[3]         # e.g., "45"
+
+# Read icon codepoints
+with open(input_file, "r") as f:
     content = f.read().replace("\n", "")
     icons = [code.strip().upper() for code in content.split(",") if code.strip()]
 
-# Format for pyftsubset: U+CODE,U+CODE,...
 unicodes_arg = ",".join([f"U+{code}" for code in icons])
 
-# Run pyftsubset to generate icons.ttf
+# Generate subset TTF
 pyftsubset_cmd = [
     "pyftsubset",
     "MaterialIcons-Regular.ttf",
     f"--unicodes={unicodes_arg}",
-    "--output-file=icons.ttf"
+    f"--output-file={output_font_base}.ttf"
 ]
 subprocess.run(pyftsubset_cmd, check=True)
 
-# Run otf2bdf to generate icons.bdf at pixel size 45
+# Convert TTF to BDF with specified size
 otf2bdf_cmd = [
     "otf2bdf",
-    "icons.ttf",
-    "-o", "icons.bdf",
-    "-p", "45"
+    f"{output_font_base}.ttf",
+    "-o", f"{output_font_base}.bdf",
+    "-p", font_size
 ]
 subprocess.run(otf2bdf_cmd, check=True)
 
-# List the icons in the final .bdf font file
-print("Icons in icons.bdf:")
-with open("icons.bdf", "r") as bdf:
+# List icons in BDF
+print(f"Icons in {output_font_base}.bdf:")
+with open(f"{output_font_base}.bdf", "r") as bdf:
     for line in bdf:
         match = re.match(r"^STARTCHAR\s+(\w+)", line)
         if match:
-            char_name = match.group(1)
-            print(f"- {char_name}")
+            print(f"- {match.group(1)}")
