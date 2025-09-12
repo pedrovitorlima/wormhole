@@ -11,11 +11,10 @@ from adafruit_minimqtt.adafruit_minimqtt import MQTT
 
 from welcome_panel import WelcomePanel
 from mqtt_manager import MqttManager
-import time
-import time
 from wifi_manager import WifiManager
 from dishwasher import go_dishwasher
 import constants
+import time
 
 displayio.release_displays()
 i2c = busio.I2C(scl=board.GP21, sda=board.GP20)
@@ -33,21 +32,35 @@ welcome = WelcomePanel(display)
 welcome.show()
 
 wifi_manager = WifiManager(display)
-pool, ssl_connect = wifi_manager.connect()
-welcome.show(wifi=True)
 
-mqtt_manager = MqttManager(pool, ssl_connect)
-mqtt_client = mqtt_manager.create_mqtt_client()
+connected = False
+retry_count = 0
+mqtt_manager = None
+while not connected and retry_count < 3:
+    try:
+        pool, ssl_connect = wifi_manager.connect()
+        welcome.show(wifi=True)
+
+        mqtt_manager = MqttManager(pool, ssl_connect)
+        mqtt_client = mqtt_manager.create_mqtt_client()
+        connected = True
+    except Exception as e:
+        print("Failed to connect to WiFi or MQTT. Trying again:", e)
+        retry_count += 1
+
+if not connected:
+    raise RuntimeError("Could not connect to WiFi or MQTT after 3 attempts.")
+
 welcome.show(wifi=True, mqtt=True)
-
 encoder = rotaryio.IncrementalEncoder(board.GP27, board.GP26)
 
-while encoder.position is None:
+# Avoid infinite loop if encoder never updates
+timeout_start = time.monotonic()
+while encoder.position is None and time.monotonic() - timeout_start < 5:
     time.sleep(0.01)
-last_position = encoder.position
+last_position = encoder.position or 0
 
-menu = [None] * 4  
-
+menu = [None] * 4
 menu[constants.DISHWASHER] = ('\uf1f7', "unload check-in", "Dishwasher")
 menu[constants.WEATHER] = ('\ue2bd', "how is it today?", "Weather")
 menu[constants.SENSORS] = ('\uEF3E', "hum,temp, air, etc", "Sensors")
@@ -55,28 +68,26 @@ menu[constants.SEND_DATA] = ('\ue85d', "send via email", "Send Data")
 
 menu_index = 0
 
+# Cache fonts
+icons_font = bitmap_font.load_font("fonts/icons.bdf")
+
 def draw_menu():
-    # Make the display context
     splash = displayio.Group()
     display.root_group = splash
 
     color_bitmap = displayio.Bitmap(constants.WIDTH, constants.HEIGHT, 1)
     color_palette = displayio.Palette(1)
-    color_palette[0] = 0xFFFFFF  # White
-
+    color_palette[0] = 0xFFFFFF
     bg_sprite = displayio.TileGrid(color_bitmap, pixel_shader=color_palette, x=0, y=0)
     splash.append(bg_sprite)
 
-    # Draw a smaller inner rectangle in black
     inner_bitmap = displayio.Bitmap(constants.WIDTH - constants.BORDER * 2, constants.HEIGHT - constants.BORDER * 2, 1)
     inner_palette = displayio.Palette(1)
-    inner_palette[0] = 0x000000  # Black
+    inner_palette[0] = 0x000000
     inner_sprite = displayio.TileGrid(inner_bitmap, pixel_shader=inner_palette, x=constants.BORDER, y=constants.BORDER)
     splash.append(inner_sprite)
 
-    # Menu text label
-    icons = bitmap_font.load_font("fonts/icons.bdf")
-    icon_area = label.Label(font=icons, text=menu[menu_index][0], x=30, y=70)
+    icon_area = label.Label(font=icons_font, text=menu[menu_index][0], x=30, y=70)
     splash.append(icon_area)
 
     legend = label.Label(terminalio.FONT, text=menu[menu_index][1], scale=1, color=0xFFFFFF, x=10, y=110)
@@ -84,21 +95,18 @@ def draw_menu():
 
     menu_text_area = label.Label(terminalio.FONT, text=menu[menu_index][2], scale=2, color=0xFFFFFF, x=5, y=24)
     splash.append(menu_text_area)
-    
+
     return icon_area, legend, menu_text_area
 
 button = digitalio.DigitalInOut(board.GP22)
 button.direction = digitalio.Direction.INPUT
-button.pull = digitalio.Pull.UP  # Assumes button pulls pin LOW when pressed
+button.pull = digitalio.Pull.UP
 
 icon_area, legend, menu_text_area = draw_menu()
 
 try:
     while True:
-        mqtt_client.loop()
-        
         position = encoder.position
-        
         if position != last_position:
             if position > last_position:
                 menu_index = (menu_index + 1) % len(menu)
@@ -106,26 +114,29 @@ try:
                 menu_index = (menu_index - 1) % len(menu)
             last_position = position
 
-            # Update icon and text
             icon_area.text = menu[menu_index][0]
             legend.text = menu[menu_index][1]
             menu_text_area.text = menu[menu_index][2]
-        
-        if not button.value: 
+
+        if not button.value:
+            try:
+                mqtt_client.loop()
+            except Exception as e:
+                print("MQTT loop error:", e)
             if menu_index == constants.DISHWASHER:
-                go_dishwasher(display, encoder, button)
+                go_dishwasher(display, encoder, button, mqtt_manager)
             elif menu_index == constants.WEATHER:
                 print("Weather selected")
             elif menu_index == constants.SENSORS:
                 print("Sensors selected")
             elif menu_index == constants.SEND_DATA:
                 print("Send Data selected")
-                    
+
             print("Button pressed! Action for:", menu[menu_index][2])
             icon_area, legend, menu_text_area = draw_menu()
-
             time.sleep(0.2)
 
         time.sleep(0.05)
 except KeyboardInterrupt:
     print("Exiting and disconnecting from mqtt...")
+    

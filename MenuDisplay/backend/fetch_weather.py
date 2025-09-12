@@ -1,34 +1,66 @@
-import requests
-from bs4 import BeautifulSoup
+from ftplib import FTP
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 
-def fetch_weather(url):
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+def fetch_weather():
+    ftp = FTP("ftp.bom.gov.au")
+    ftp.login()
+    ftp.cwd("anon/gen/fwo")
 
-    response = requests.get(url, headers=HEADERS)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
+    filename = "IDN10064.xml"
+    data = []
+    ftp.retrbinary(f"RETR {filename}", data.append)
+    ftp.quit()
 
-    day_main = soup.find("div", class_="day main")
-    if not day_main:
-        raise ValueError("Could not find day main div")
+    xml_content = b"".join(data).decode("utf-8")
+    root = ET.fromstring(xml_content)
 
-    # Max temperature
-    max_temp_tag = day_main.find("em", class_="max")
-    max_temp = max_temp_tag.text.strip() if max_temp_tag else None
+    now = datetime.now(timezone.utc).astimezone()  # aware datetime in local zone
+    today = now.date()
 
-    # Summary
-    summary_tag = day_main.find("dd", class_="summary")
-    summary = summary_tag.text.strip() if summary_tag else None
+    forecasts = []
+    sydney_area = root.find(".//area[@aac='NSW_PT131']")  # Sydney (location)
+    if sydney_area is None:
+        print("Sydney area not found in XML")
+        return forecasts
 
-    # Chance of rain (look for dd.rain instead of dd.main)
-    rain_dd = day_main.find("dd", class_="rain")
-    chance_rain_tag = rain_dd.find("em", class_="pop") if rain_dd else None
-    chance_rain = chance_rain_tag.text.strip() if chance_rain_tag else None
+    for period in sydney_area.findall("forecast-period"):
+        start_time = period.attrib.get("start-time-local")
+        end_time = period.attrib.get("end-time-local")
+        if not start_time or not end_time:
+            continue
 
-    return {
-        "max_temp": max_temp,
-        "summary": summary,
-        "chance_rain": chance_rain
-    }
+        start_dt = datetime.fromisoformat(start_time)
+        end_dt = datetime.fromisoformat(end_time)
+
+        # Only include forecast periods for today that are not in the past
+        if end_dt <= now or start_dt.date() != today:
+            continue
+
+        condition = None
+        min_temp = None
+        max_temp = None
+        rain_chance = None
+
+        for text in period.findall("text"):
+            if text.attrib.get("type") == "precis":
+                condition = text.text
+            elif text.attrib.get("type") == "probability_of_precipitation":
+                rain_chance = text.text
+
+        for element in period.findall("element"):
+            if element.attrib.get("type") == "air_temperature_minimum":
+                min_temp = element.text
+            elif element.attrib.get("type") == "air_temperature_maximum":
+                max_temp = element.text
+
+        forecasts.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "condition": condition,
+            "min_temp": min_temp,
+            "max_temp": max_temp,
+            "rain_chance": rain_chance
+        })
+
+    return forecasts

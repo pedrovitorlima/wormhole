@@ -7,14 +7,14 @@ import json
 
 load_dotenv()
 
-MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
-MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
-WEATHER_TOPIC = os.getenv("PUBLISH_TOPIC", "wormhole/weather")
-DISHWASHER_TOPIC = os.getenv("DISHWASHER_TOPIC", "wormhole/dishwasher")
-LISTEN_TOPIC = os.getenv("LISTEN_TOPIC", "palantir/command")
-API_URL = os.getenv("API_URL", "http://www.bom.gov.au/nsw/forecasts/sydney.shtml")
-MQTT_USERNAME = os.getenv("MQTT_USERNAME", "username")
-MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "password")
+MQTT_BROKER = os.getenv("MQTT_BROKER")
+MQTT_PORT = int(os.getenv("MQTT_PORT"))
+MQTT_USERNAME = os.getenv("MQTT_USERNAME")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
+
+WEATHER_TOPIC = os.getenv("PUBLISH_TOPIC")
+DISHWASHER_TOPIC = os.getenv("DISHWASHER_TOPIC")
+LISTEN_TOPIC = os.getenv("LISTEN_TOPIC")
 
 def on_message(client, userdata, message, properties=None):
     try:
@@ -24,12 +24,12 @@ def on_message(client, userdata, message, properties=None):
         
         print(f"Received message on topic {message.topic} with action: {action}")
         if action == "load_all":
-            weather_data = fetch_weather(API_URL)
+            weather_data = fetch_weather()
             client.publish(WEATHER_TOPIC, json.dumps(weather_data))
             client.publish(DISHWASHER_TOPIC, json.dumps({"next": "woman"}))
 
         if action == "update_weather":
-            weather_data = fetch_weather(API_URL)
+            weather_data = fetch_weather()
             client.publish(WEATHER_TOPIC, json.dumps(weather_data))
     except (json.JSONDecodeError, AttributeError) as e:
         print(f"Failed to parse payload: {message.payload.decode().strip()} ({e})")
@@ -53,7 +53,7 @@ def main():
 
     try:
         while True:
-            data = fetch_weather(API_URL)
+            data = fetch_weather()
             client.publish(WEATHER_TOPIC, json.dumps(data))
             for _ in range(600):  # 600 x 1s = 10 minutes
                 time.sleep(1)

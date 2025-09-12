@@ -3,14 +3,15 @@ import constants
 import time
 from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.bitmap_label import Label
+import mqtt_manager
 
 def select_user(option, x, y):
+    # horizontal line below icon (selection highlight)
     offset_x = 0
     offset_y = 30
-    
     if option != 1:
         offset_x = 60
-        
+
     line_width = 50  
     line_height = 3  
     line_x = x + offset_x
@@ -21,55 +22,61 @@ def select_user(option, x, y):
     line_palette[0] = 0x000000  
     line_palette[1] = 0xFFFFFF  
 
-    for x in range(line_width):
-        for y in range(line_height):
-            line_bitmap[x, y] = 1
+    for col in range(line_width):
+        for row in range(line_height):
+            line_bitmap[col, row] = 1
 
-    line_sprite = displayio.TileGrid(line_bitmap, pixel_shader=line_palette, x=line_x, y=line_y)
-    return line_sprite
+    return displayio.TileGrid(line_bitmap, pixel_shader=line_palette, x=line_x, y=line_y)
+
+def draw_last_checkin(man_icon, woman_icon):
+    icons_small_font = bitmap_font.load_font("fonts/icons_x_small.bdf")
+    
+    print(mqtt_manager.dishwasher.get("next"))
+    if mqtt_manager.dishwasher.get("next", "man") == "woman":
+        return Label(icons_small_font, text="\uE86C", color=0xFFFFFF, x=man_icon.x + man_icon.x // 2 + 8, y=man_icon.y // 2) 
+    else:
+        return Label(icons_small_font, text="\uE86C", color=0xFFFFFF, x=woman_icon.x + man_icon.x // 2 + 8, y=woman_icon.y // 2)
     
 # display is a SH1107
-def go_dishwasher(display, encoder, button):
+def go_dishwasher(display, encoder, button, mqtt):
     option = 0
     last_position = encoder.position
-    
+
     blank_group = displayio.Group()
-    # Create a black bitmap covering the whole screen
     black_bitmap = displayio.Bitmap(constants.WIDTH, constants.HEIGHT, 1)
     black_palette = displayio.Palette(1)
-    black_palette[0] = 0x000000  # Black
-    black_sprite = displayio.TileGrid(black_bitmap, pixel_shader=black_palette, x=0, y=0)
-    blank_group.append(black_sprite)
+    black_palette[0] = 0x000000
+    blank_group.append(displayio.TileGrid(black_bitmap, pixel_shader=black_palette, x=0, y=0))
 
-    # Load the icon font
     icons_font = bitmap_font.load_font("fonts/icons_small.bdf")
-
-    # Display two icons
-    man_icon = Label(icons_font, text="\uE87C", color=0xFFFFFF, x=10, y=64)
+    man_icon = Label(icons_font, text="\ue87c", color=0xFFFFFF, x=10, y=64)
     woman_icon = Label(icons_font, text="\uf8db", color=0xFFFFFF, x=75, y=64)
     blank_group.append(man_icon)
     blank_group.append(woman_icon)
-    
-    blank_group.append(select_user(option=2, x=man_icon.x, y=man_icon.y))
 
+    # horizontal line highlight
+    select_line = select_user(option=option, x=man_icon.x, y=man_icon.y)
+    blank_group.append(select_line)
+    
+    blank_group.append(draw_last_checkin(man_icon, woman_icon))
+    
     display.root_group = blank_group
 
     while not button.value:
         time.sleep(0.01)
-        
+
     while True:
         position = encoder.position
         if position != last_position:
-
             option = 1 if option == 0 else 0
             last_position = position
 
-            blank_group.pop()
+            blank_group.remove(select_line)
             select_line = select_user(option=option, x=man_icon.x, y=man_icon.y)
             blank_group.append(select_line)
 
-
         if not button.value:
+            mqtt.update_dishwasher({"next": "man" if option == 0 else "woman"})
             break
 
         time.sleep(0.05)
