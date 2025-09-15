@@ -5,7 +5,7 @@ from adafruit_bitmap_font import bitmap_font
 from adafruit_display_text.bitmap_label import Label
 import mqtt_manager
 
-def select_user(option, x, y):
+def select_user(option: int, x: int, y: int) -> displayio.TileGrid:
     # horizontal line below icon (selection highlight)
     offset_x = 0
     offset_y = 30

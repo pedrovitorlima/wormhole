@@ -40,3 +40,8 @@ grafana-data/
 *.pid
 *.tmp
 *.swp
+
+.vscode
+constants.py
+___init___.py
+._*

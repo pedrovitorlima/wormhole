@@ -3,6 +3,7 @@ import time
 import os
 from dotenv import load_dotenv
 from fetch_weather import fetch_weather
+from typing import Optional, Any
 import json
 
 load_dotenv()
@@ -16,7 +17,7 @@ WEATHER_TOPIC = os.getenv("PUBLISH_TOPIC")
 DISHWASHER_TOPIC = os.getenv("DISHWASHER_TOPIC")
 LISTEN_TOPIC = os.getenv("LISTEN_TOPIC")
 
-def on_message(client, userdata, message, properties=None):
+def on_message(client: mqtt.Client, _: Any, message: mqtt.MQTTMessage, __: Optional[Any] = None) -> None:
     try:
         payload = json.loads(message.payload.decode().strip())
         print(f"Processing message {payload}")
@@ -35,10 +36,10 @@ def on_message(client, userdata, message, properties=None):
         print(f"Failed to parse payload: {message.payload.decode().strip()} ({e})")
         return
         
-def on_connect(client, userdata, flags, reason_code, properties):
+def on_connect(_: mqtt.Client, __: Any, ___: dict[str, int], reason_code: int, ____: Optional[Any] = None) -> None:
     print(f"Connected with result code {reason_code}")
 
-def main():
+def main() -> None:
     print(f'Connecting to MQTT broker at {MQTT_BROKER}:{MQTT_PORT} with username {MQTT_USERNAME}')
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.on_message = on_message
@@ -55,7 +56,8 @@ def main():
         while True:
             data = fetch_weather()
             client.publish(WEATHER_TOPIC, json.dumps(data))
-            for _ in range(600):  # 600 x 1s = 10 minutes
+            minutes = 5
+            for _ in range(60 * minutes):  
                 time.sleep(1)
     except KeyboardInterrupt:
         print("Exiting...")
