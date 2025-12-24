@@ -1,6 +1,0 @@
-paho-mqtt
-python-dotenv
-requests
-bs4
-requests
-urllib3<2

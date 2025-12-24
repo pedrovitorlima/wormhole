@@ -48,24 +48,6 @@ services:
       - "5001:5001"
     restart: always
 
-  palantir:
-    build: ../MenuDisplay/backend
-    container_name: palantir
-    depends_on:
-      - mqtt-broker
-    env_file:
-      - .env
-    restart: always
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-    env_file:
-      - .dockerenv
-
 volumes:
   grafana-data:
   postgres-data:
