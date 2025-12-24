@@ -45,3 +45,4 @@ grafana-data/
 constants.py
 ___init___.py
 ._*
+.continue/agents/new-agent-1.yaml
